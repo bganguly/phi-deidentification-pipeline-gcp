@@ -1,0 +1,27 @@
+# Secrets — never commit these
+.env
+.env.cloud
+.env.local
+*.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+
+# Alembic runtime
+alembic/versions/__pycache__/
+
+# Docker
+docker/grafana/dashboards/
+
+# IDE
+.idea/
+.vscode/
+*.swp
