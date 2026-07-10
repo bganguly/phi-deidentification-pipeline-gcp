@@ -152,22 +152,10 @@ elif [[ "${TARGET}" == "cloud" ]]; then
     --format 'value(status.url)')"
 
   echo "▶ Service URL: ${SERVICE_URL}"
-
-  # Write phiBackendUrl into portfolio deploy-live.js
-  PORTFOLIO_DIR="$(cd "${SCRIPT_DIR}/../../portfolio" 2>/dev/null && pwd || true)"
-  DEPLOY_LIVE="${PORTFOLIO_DIR}/deploy-live.js"
-  if [[ -f "${DEPLOY_LIVE}" ]]; then
-    sed -i '' "s|phiBackendUrl: '.*'|phiBackendUrl: '${SERVICE_URL}'|" "${DEPLOY_LIVE}"
-    echo "▶ Updated ${DEPLOY_LIVE} with phiBackendUrl"
-
-    # Commit + push portfolio
-    git -C "${PORTFOLIO_DIR}" add deploy-live.js
-    git -C "${PORTFOLIO_DIR}" commit -m "phi pipeline: set phiBackendUrl to Cloud Run service"
-    git -C "${PORTFOLIO_DIR}" push
-    echo "▶ Portfolio pushed"
-  else
-    echo "⚠  Could not find portfolio/deploy-live.js — set phiBackendUrl manually to: ${SERVICE_URL}"
-  fi
+  echo ""
+  echo "  If this is first deployment, set phiBackendUrl once in portfolio/deploy-live.js:"
+  echo "    phiBackendUrl: '${SERVICE_URL}',"
+  echo "  Access is controlled by the token — not by this URL."
 
   echo ""
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
