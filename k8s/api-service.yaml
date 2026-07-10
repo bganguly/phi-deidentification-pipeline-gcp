@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: phi-api
+  namespace: phi-pipeline
+spec:
+  selector:
+    app: phi-api
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
+  type: ClusterIP

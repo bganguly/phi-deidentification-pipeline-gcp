@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: phi-config
+  namespace: phi-pipeline
+data:
+  ANTHROPIC_MODEL: "claude-haiku-4-5"
+  CONFIDENCE_THRESHOLD: "0.85"
+  LOG_LEVEL: "INFO"
+  OTLP_ENDPOINT: "http://jaeger:4317"

@@ -1,0 +1,18 @@
+[project]
+name = "phi-deidentification-pipeline"
+version = "0.1.0"
+description = "Healthcare PHI de-identification pipeline with spaCy + Claude Haiku fallback"
+requires-python = ">=3.12"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.mypy]
+python_version = "3.12"
+strict = false
+ignore_missing_imports = true
