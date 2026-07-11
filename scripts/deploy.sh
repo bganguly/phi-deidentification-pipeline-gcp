@@ -1,15 +1,21 @@
 #!/usr/bin/env bash
-# Usage:
-#   deploy.sh          → Cloud Run (default)
-#   deploy.sh local    → Docker Compose local stack
-#   deploy.sh down     → tear down local stack
+# Usage: ./scripts/deploy.sh
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 PORTFOLIO_DIR="/Users/bikram/Personal/interview-prep/grouped-projects/portfolio"
 DEPLOY_LIVE="${PORTFOLIO_DIR}/deploy-live.js"
-TARGET="${1:-cloud}"
+
+printf '\n  [1] Local  — Docker Compose local stack\n'
+printf '  [2] Cloud  — deploy to Cloud Run\n'
+printf '  [3] Down   — tear down local Docker stack\n\n'
+read -rp 'Choose [1]: ' _MODE
+case "${_MODE:-1}" in
+  2) TARGET="cloud" ;;
+  3) TARGET="down" ;;
+  *) TARGET="local" ;;
+esac
 
 # ── Down ──────────────────────────────────────────────────────────────────────
 if [[ "${TARGET}" == "down" ]]; then
