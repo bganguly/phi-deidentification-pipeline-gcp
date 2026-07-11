@@ -10,6 +10,67 @@ Full observability via structured JSON logs, Prometheus metrics, and OpenTelemet
 
 ---
 
+## How it works
+
+1. **Records generated in the browser** — no files, no uploads. 50 clinical notes are constructed in JavaScript from randomised Faker values (name, SSN, MRN, DOB, address, phone, physician). Each contains 6–8 PHI entities.
+2. **POST /ingest** — all 50 records are sent as one JSON batch. FastAPI writes a `Job` row and 50 `Record` rows to PostgreSQL (`raw_text` persisted, `deidentified_text` null, `status = pending`), then enqueues one Celery task per record onto Redis. Returns a `job_id` immediately.
+3. **Celery workers process records in parallel** — each worker reads its `Record` from PostgreSQL and runs spaCy `en_core_sci_md` + regex patterns (SSN, MRN, PHONE, EMAIL). This produces a list of detected entities and a mean confidence score across them.
+4. **Claude fallback (tier-2)** — the 0.85 threshold is evaluated per-record, not per-entity. If spaCy/regex finds entities, mean confidence is ≥ 0.90 and Claude is not called. Claude is only invoked when spaCy finds *nothing* but the text contains PHI-indicator keywords (`patient`, `ssn`, `mrn`, etc.) — confidence returns 0.40, triggering the fallback. Claude returns structured JSON with character offsets; any new spans are merged in without duplicating spaCy's results.
+5. **Synthetic substitution** — entities are sorted by character offset descending so replacements don't shift earlier spans. Each span is string-spliced with a Faker value matched to its type (names → `faker.name()`, dates shifted ±30 days, SSNs → `faker.ssn()`, etc.).
+6. **Two writes, one commit** — `Record.deidentified_text` is updated and one `RedactionLog` row is written per entity: SHA-256 hash of the original value, the Faker replacement, entity type, confidence, and which model detected it. The original PHI value is never stored.
+7. **Browser polls GET /records/{job_id}** — once per second until all 50 complete. Completions stream back as workers finish.
+
+---
+
+## Remote deployment
+
+Two supported targets:
+
+| Target | Command | What's deployed |
+|---|---|---|
+| Cloud Run (API only) | `./deploy.sh` | API container → Cloud Run; worker **not** deployed |
+| GKE (full stack) | `terraform apply` in `infra/` + `kubectl apply -f k8s/` | API + Celery workers + HPA on GKE cluster |
+
+**Cloud Run prerequisites** — create `.env.cloud` before running `deploy.sh`:
+```
+DATABASE_URL=postgresql+asyncpg://...    # managed Cloud SQL or external PostgreSQL
+DATABASE_SYNC_URL=postgresql+psycopg2://...
+REDIS_URL=redis://...                    # Cloud Memorystore or external Redis
+PIPELINE_ACCESS_TOKEN=<your-token>
+ANTHROPIC_API_KEY=sk-ant-...
+```
+`deploy.sh` builds the API image, pushes to GCR, deploys to Cloud Run, and automatically writes the live URL into the portfolio's `deploy-live.js`. Without a deployed Celery worker, `/ingest` will accept records and queue them in Redis but nothing will process them — use GKE for a complete deployment.
+
+**GKE** via `infra/` provisions a GKE cluster, Cloud SQL, Artifact Registry, and VPC. `k8s/` manifests deploy the API, Celery workers, and an HPA that scales workers horizontally under load.
+
+---
+
+## Using real clinical documents
+
+The `/ingest` endpoint accepts any text — replace synthetic records with real clinical notes in the same JSON format. Key considerations:
+
+| Concern | Detail |
+|---|---|
+| **spaCy/regex tier** | Runs fully on your infrastructure — no data leaves |
+| **Claude fallback** | Sends raw text to Anthropic's API. For HIPAA compliance, a Business Associate Agreement (BAA) with Anthropic is required, or set `CONFIDENCE_THRESHOLD=1.0` in `.env` to disable Claude entirely and rely on spaCy/regex only |
+| **Audit trail** | `redaction_log` stores SHA-256 hashes of original values — you can verify a specific value was present without retaining raw PII in the database |
+
+---
+
+## What this demonstrates
+
+| Skill | Evidence |
+|---|---|
+| **Pragmatic LLM integration** | Claude is not used for everything — it is invoked surgically only when rules-based NLP falls short, minimising API cost and latency |
+| **Cost-conscious AI design** | Two-tier architecture keeps ~90% of records within the free spaCy/regex tier; Claude spend scales with edge-case volume, not total record count |
+| **Production API design** | Async FastAPI + Celery decouples ingestion from processing; records persist before workers start so no data is lost if a worker crashes |
+| **Compliance-aware audit logging** | SHA-256 hashes satisfy audit requirements without storing raw PHI — a deliberate design choice, not an afterthought |
+| **Healthcare domain knowledge** | Correct PHI entity taxonomy (PERSON, DATE, SSN, MRN, PHONE, EMAIL, GPE, LOC, ORG); date shifting preserves temporal relationships rather than nulling dates |
+| **Observability** | Every record produces an OTel trace visible in Jaeger; Prometheus counters track processed records, entity counts, and Claude fallback rate |
+| **Infrastructure as code** | Terraform (GKE) + Pulumi-style `deploy.sh` (Cloud Run); `k8s/` manifests with HPA for worker autoscaling |
+
+---
+
 | | |
 |---|---|
 | **LLM integration (Claude Haiku 4.5)** | Anthropic SDK; tier-2 fallback for low-confidence records; structured JSON output via system prompt; entity extraction with character offsets |
