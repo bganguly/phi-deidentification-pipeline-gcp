@@ -6,6 +6,8 @@ Claude Haiku 4.5 covers ambiguous fallbacks. Detected entities are replaced with
 Faker-generated synthetic equivalents — not blank redaction — preserving analytical signal.
 Full observability via structured JSON logs, Prometheus metrics, and OpenTelemetry traces → Jaeger.
 
+> **Demo batch:** 50 synthetic clinical records · ~350 PHI entities detected and replaced · <10% of records reach Claude (spaCy handles the rest) · 3 parallel Celery workers · real-time progress with per-record Jaeger trace links
+
 ---
 
 | | |
@@ -83,7 +85,18 @@ Local prerequisites: **Docker** and **Docker Compose**. An **Anthropic API key**
 
 The local stack starts: FastAPI API · Celery worker · PostgreSQL 16 · Redis 7 · Jaeger · Prometheus · Grafana.
 
-> **Cloud cost:** Cloud Run, Cloud SQL, and GKE bill while running. Tear down with `./deploy.sh down` or `terraform destroy` when not actively demoing.
+### What works locally vs cloud
+
+| | Local (Docker Compose) | Cloud Run |
+|---|---|---|
+| Swagger UI + REST API | ✅ `localhost:8000/docs` | ✅ |
+| `scripts/seed.py` batch ingest | ✅ | ✅ |
+| Jaeger trace UI | ✅ `localhost:16686` | — |
+| Prometheus / Grafana | ✅ `localhost:9090` / `:3000` | — |
+| Portfolio browser demo (Claude direct) | ✅ calls Anthropic API from browser, no backend needed | ✅ |
+| Portfolio batch demo (50 records live) | ❌ hardwired to Cloud Run URL via `deploy.sh` | ✅ |
+
+> **Cloud cost:** Cloud Run bills while running. Tear down with `./deploy.sh down` or `terraform destroy` when not actively demoing.
 
 ---
 
