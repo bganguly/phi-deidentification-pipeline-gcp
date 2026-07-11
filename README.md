@@ -6,7 +6,7 @@ Claude Haiku 4.5 covers ambiguous fallbacks. Detected entities are replaced with
 Faker-generated synthetic equivalents — not blank redaction — preserving analytical signal.
 Full observability via structured JSON logs, Prometheus metrics, and OpenTelemetry traces → Jaeger.
 
-> **Demo batch:** 50 synthetic clinical records · ~350 PHI entities detected and replaced · <10% of records reach Claude (spaCy handles the rest) · 3 parallel Celery workers · real-time progress with per-record Jaeger trace links
+> **Demo batch:** 50 clinical records generated on the fly (randomised names, SSNs, MRNs, dates, addresses, phones — no pre-existing files) · ~350 PHI entities detected and replaced · <10% of records reach Claude (spaCy handles the rest) · 3 parallel Celery workers · real-time progress with per-record Jaeger trace links
 
 ---
 
