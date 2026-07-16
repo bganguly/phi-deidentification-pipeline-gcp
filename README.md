@@ -8,6 +8,16 @@ Full observability via structured JSON logs, Prometheus metrics, and OpenTelemet
 
 > **Demo batch:** 50 clinical records generated on the fly (randomised names, SSNs, MRNs, dates, addresses, phones — no pre-existing files) · ~350 PHI entities detected and replaced · <10% of records reach Claude (spaCy handles the rest) · 3 parallel Celery workers · real-time progress with per-record Jaeger trace links
 
+**[→ Portfolio demo](https://bganguly.github.io/?open=phi)**
+
+## Using the App
+
+Three live pages are linked from the portfolio demo:
+
+1. **Pipeline** — architecture diagram and trace walkthrough for a single record through spaCy tier-1 and Claude fallback.
+2. **Browser demo** — paste any clinical text (or use the prefilled example) and click **De-identify**. Claude Haiku 4.5 detects PHI and returns synthetic replacements in real time. Requires an Anthropic API key in the browser.
+3. **Batch run** — generates 50 synthetic clinical records, submits them to the live Cloud Run API, and streams real-time progress across 3 parallel Celery workers.
+
 ---
 
 ## How it works
@@ -143,6 +153,15 @@ Clinical text
 | Issue a 48h access token | `./grant-access.sh` |
 
 Local prerequisites: **Docker** and **Docker Compose**. An **Anthropic API key** is prompted on first run.
+
+`./deploy.sh` (Cloud Run target) builds the API image via Cloud Build, pushes to Artifact Registry, deploys to Cloud Run, and writes the live service URL into the portfolio's `deploy-live.js`:
+
+```
+./deploy.sh
+  ├─ gcloud builds submit → Artifact Registry
+  ├─ gcloud run deploy phi-api
+  └─ writes live URL to portfolio/deploy-live.js
+```
 
 The local stack starts: FastAPI API · Celery worker · PostgreSQL 16 · Redis 7 · Jaeger · Prometheus · Grafana.
 
