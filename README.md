@@ -10,6 +10,8 @@ Full observability via structured JSON logs, Prometheus metrics, and OpenTelemet
 
 **[→ Portfolio demo](https://bganguly.github.io/?open=phi)**
 
+> **Schedule:** ECS Fargate (full pipeline) runs weekdays 8 am – 5 pm PT. The static pipeline diagram and browser demo are always available via the portfolio.
+
 ## Using the App
 
 Three live pages are linked from the portfolio demo:
